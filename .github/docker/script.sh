@@ -25,7 +25,9 @@ sed -i 's/sudo //g' ${TEMP_FILE}
 # Initialize an executable script
 cat > ${SCRIPT_NAME} << EOF
 #!/usr/bin/env bash
-set -eufxo pipefail
+
+# The AOSP build contains undefined variables; therefore, the '-u' flag has been removed.
+set -efxo pipefail
 
 EOF
 

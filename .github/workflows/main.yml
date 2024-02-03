@@ -44,6 +44,7 @@ jobs:
         if: always()
         run: |
           rm -rf ${{ env.job_workspace_dir }}
+          docker container prune -f
   release:
     name: 'Create Release'
     needs: test

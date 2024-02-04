@@ -1,6 +1,32 @@
 [![Github actions](https://github.com/wxleong/tpm2-aosp2/actions/workflows/main.yml/badge.svg)](https://github.com/wxleong/tpm2-aosp2/actions)
 
-# tpm2-aosp2
+# Introduction
+
+Android integration guide for OPTIGA™ TPM 2.0.
+
+# Table of Contents
+
+- **[Prerequisites](#prerequisites)**
+- **[Preparing the Environment](#preparing-the-environment)**
+- **[Building AOSP](#building-aosp)**
+- **[Running Android Emulator](#running-android-emulator)**
+- **[Running Headless Android Emulator](#running-headless-android-emulator)**
+
+# Prerequisites
+
+The integration guide has been CI tested for compatibility with the following platform and operating system:
+
+- Platform: x86_64
+- Operating System: Ubuntu (22.04)
+
+# Preparing the Environment
+
+Download this project for later use:
+```exclude
+$ git clone https://github.com/wxleong/tpm2-aosp2 ~/tpm2-aosp2
+```
+
+# Building AOSP
 
 On Ubuntu 22.04:
 ```all
@@ -26,6 +52,47 @@ $ du -sm ~/aosp
 
 $ cd ~/aosp
 $ source build/envsetup.sh
-$ lunch aosp_x86_64-eng
-$ m -j$(nproc)
+$ lunch sdk_phone_x86_64
+$ m -j
 ```
+
+# Running Android Emulator
+
+```exclude
+$ cd ~/aosp
+$ source build/envsetup.sh
+$ emulator -verbose -gpu swiftshader -selinux permissive -logcat *:v
+```
+
+# Running Headless Android Emulator
+
+Start the emulator in headless mode:
+```all
+$ cd ~/aosp
+$ source build/envsetup.sh
+$ export ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL=1
+
+$ emulator -selinux permissive -no-window -no-audio &
+$ EMULATOR_PID=$!
+```
+
+Wait for the emulator to be ready:
+```all
+$ export PATH=${HOME}/aosp/out/host/linux-x86/bin:$PATH
+
+# Usage: ./emulator_check.sh <emulator pid> <desired android version> <max wait time in seconds>
+$ chmod +x ~/tpm2-aosp2/scripts/emulator_check.sh
+$ ~/tpm2-aosp2/scripts/emulator_check.sh $EMULATOR_PID 14 30
+```
+
+Interact with the emulator:
+```all
+$ adb shell getprop ro.build.version.sdk
+$ adb shell getprop ro.system.build.version.release
+```
+
+Terminate the emulator:
+```all
+$ kill -SIGTERM $EMULATOR_PID
+```
+

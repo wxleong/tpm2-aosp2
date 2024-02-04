@@ -31,6 +31,7 @@ jobs:
           SCRIPT_NAME: ${{ env.script_name }}
           JOB_WORKSPACE_DIR: ${{ env.job_workspace_dir }}
           DOCKER_REGISTRY: 'https://registry.hub.docker.com/v2'
+          CONTAINER_NAME: ${{github.run_id}}
         run: |
           .github/docker/launcher.sh
         shell: bash
@@ -44,6 +45,7 @@ jobs:
         if: always()
         run: |
           rm -rf ${{ env.job_workspace_dir }}
+          docker kill ${{github.run_id}} || true
           docker container prune -f
   release:
     name: 'Create Release'

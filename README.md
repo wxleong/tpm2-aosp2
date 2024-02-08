@@ -21,6 +21,25 @@ The integration guide has been CI tested for compatibility with the following pl
 
 # Preparing the Environment
 
+Download package information:
+```all
+$ sudo apt update
+```
+
+Install packages:
+```all
+$ sudo apt install -y git git-core gnupg flex bison build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 libncurses5 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig
+
+$ export REPO=$(mktemp /tmp/repo.XXXXX)
+$ curl -o ${REPO} https://storage.googleapis.com/git-repo-downloads/repo
+$ sudo install -m 755 ${REPO} /usr/bin/repo
+$ repo version
+
+$ sudo apt install -y python3
+$ sudo ln -s /usr/bin/python3 /usr/bin/python
+$ python --version
+```
+
 Download this project for later use:
 ```exclude
 $ git clone https://github.com/wxleong/tpm2-aosp2 ~/tpm2-aosp2
@@ -28,21 +47,7 @@ $ git clone https://github.com/wxleong/tpm2-aosp2 ~/tpm2-aosp2
 
 # Building AOSP
 
-On Ubuntu 22.04:
 ```all
-$ sudo apt update
-$ sudo apt install -y git git-core gnupg flex bison build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 libncurses5 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig
-
-$ export REPO=$(mktemp /tmp/repo.XXXXX)
-$ curl -o ${REPO} https://storage.googleapis.com/git-repo-downloads/repo
-$ sudo install -m 755 ${REPO} /usr/bin/repo
-
-$ sudo apt install -y python3
-$ sudo ln -s /usr/bin/python3 /usr/bin/python
-$ python --version
-
-$ repo version
-
 $ mkdir ~/aosp
 $ cd ~/aosp
 $ repo init --depth=1 -u https://android.googlesource.com/platform/manifest -b android-14.0.0_r11
@@ -54,6 +59,7 @@ $ cd ~/aosp
 $ source build/envsetup.sh
 $ lunch sdk_phone_x86_64
 $ m -j
+$ du -sm ~/aosp/out
 ```
 
 # Running Android Emulator

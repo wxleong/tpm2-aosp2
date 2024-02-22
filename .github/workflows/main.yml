@@ -59,8 +59,8 @@ jobs:
           fetch-depth: 0
       - name: 'Changelog Pruning'
         run: |
-          sed -n `awk "/## \[${{ github.ref_name }}/{c++} c==1{ print NR; exit }" CHANGELOG.md`",$p" CHANGELOG.md > .CHANGELOG.md.tmp
-          sed `awk "/## \[[x0-9]/{c++} c==2{ print NR; exit }" .CHANGELOG.md.tmp`",$d" .CHANGELOG.md.tmp > ${{ github.workspace }}-CHANGELOG.txt
+          sed -n `awk '/## \[${{ github.ref_name }}/{c++} c==1{ print NR; exit }' CHANGELOG.md`',$p' CHANGELOG.md > .CHANGELOG.md.tmp
+          sed `awk '/## \[[M0-9]/{c++} c==2{ print NR; exit }' .CHANGELOG.md.tmp`',$d' .CHANGELOG.md.tmp > ${{ github.workspace }}-CHANGELOG.txt
       - name: 'Create Release'
         uses: softprops/action-gh-release@v1
         with:

@@ -2,19 +2,32 @@
 
 # Introduction
 
-Android integration guide for OPTIGA™ TPM 2.0.
+Guide to Integrating OPTIGA™ TPM 2.0 with the Android Open Source Project (AOSP).
+
+Please note that this guide is focused exclusively on TPM integration and does not cover AOSP security configurations. Be aware that the emulator is set to operate in permissive mode ("-selinux permissive") as described in this guide. Ensure you implement the necessary security measures according to your application's needs.
+
+---
 
 # Table of Contents
 
 - **[Prerequisites](#prerequisites)**
 - **[Preparing the Environment](#preparing-the-environment)**
-- **[Cross-Compiling OpenSSL 3](#cross-compiling-openssl-3)**
-- **[Cross-Compiling TPM2-TSS](#cross-compiling-tpm2-tss)**
-- **[Cross-Compiling TPM2-OpenSSL](#cross-compiling-tpm2-openssl)**
-- **[Cross-Compiling TPM2 Simulator](#cross-compiling-tpm2-simulator)**
-- **[Building AOSP](#building-aosp)**
-- **[Running Android Emulator](#running-android-emulator)**
-- **[Running Headless Android Emulator](#running-headless-android-emulator)**
+- **[Default AOSP Build](#default-aosp-build)**
+    - **[Building AOSP](#building-aosp)**
+    - **[Running Android Emulator with GUI](#running-android-emulator-with-gui)**
+    - **[Running Android Emulator Headless](#running-android-emulator-headless)**
+- **[Cross-Compiling Packages](#cross-compiling-packages)**
+    - **[Cross-Compiling OpenSSL 3](#cross-compiling-openssl-3)**
+    - **[Cross-Compiling TPM2-TSS](#cross-compiling-tpm2-tss)**
+    - **[Cross-Compiling TPM2-OpenSSL](#cross-compiling-tpm2-openssl)**
+    - **[Cross-Compiling TPM2 Simulator](#cross-compiling-tpm2-simulator)**
+- **[Example Android Application for Accessing TPM](example-android-application-for-accessing-tpm)**
+    - **[Preparing the Example Application](#preparing-the-example-application)**
+    - **[Rebuilding AOSP with the Example Application](#rebuilding-aosp-with-the-example-application)**
+    - **[Running the Example Application](#running-the-example-application)**
+- **[License](#license)**
+
+---
 
 # Prerequisites
 
@@ -22,6 +35,8 @@ The integration guide has been CI tested for compatibility with the following pl
 
 - Platform: x86_64
 - Operating System: Ubuntu (22.04)
+
+---
 
 # Preparing the Environment
 
@@ -64,7 +79,76 @@ Download this project for later use:
 $ git clone https://github.com/wxleong/tpm2-aosp2 --depth=1 ~/tpm2-aosp2
 ```
 
-# Cross-Compiling OpenSSL 3
+---
+
+# Default AOSP Build
+
+As the title suggests, in this section, we will walk through the default AOSP build to ensure our environment is correctly set up.
+
+## Building AOSP
+
+```all
+$ mkdir ~/aosp
+$ cd ~/aosp
+$ repo init --depth=1 -u https://android.googlesource.com/platform/manifest -b android-14.0.0_r11
+$ cp ~/aosp/.repo/repo/repo /usr/bin/repo
+$ repo sync -c -f --force-sync --no-clone-bundle --no-tags -j 0
+$ du -sm ~/aosp
+
+$ cd ~/aosp
+$ source build/envsetup.sh
+$ lunch sdk_phone_x86_64
+$ m -j
+$ du -sm ~/aosp/out
+```
+
+## Running Android Emulator with GUI
+
+```exclude
+$ cd ~/aosp
+$ source build/envsetup.sh
+$ emulator -verbose -gpu swiftshader -selinux permissive -logcat *:v
+```
+
+## Running Android Emulator Headless
+
+Start the emulator in headless mode:
+```all
+$ cd ~/aosp
+$ source build/envsetup.sh
+$ export ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL=1
+
+$ emulator -selinux permissive -no-window -no-audio &
+$ EMULATOR_PID=$!
+```
+
+Wait until the emulator is ready for use:
+```all
+$ export PATH=${HOME}/aosp/out/host/linux-x86/bin:$PATH
+
+# Usage: ./emulator_check.sh <emulator pid> <desired android version> <max wait time in seconds>
+$ chmod +x ~/tpm2-aosp2/scripts/emulator_check.sh
+$ ~/tpm2-aosp2/scripts/emulator_check.sh $EMULATOR_PID 14 120
+```
+
+Interact with the emulator:
+```all
+$ adb shell getprop ro.build.version.sdk
+$ adb shell getprop ro.system.build.version.release
+```
+
+Terminate the emulator:
+```all
+$ kill -SIGTERM $EMULATOR_PID
+```
+
+---
+
+# Cross-Compiling Packages
+
+The example provided here is based on the x86_64 architecture for running on the Android emulator. Modifying it for cross-compilation on other architectures should not be difficult.
+
+## Cross-Compiling OpenSSL 3
 
 Set the environment variables:
 ```all
@@ -105,7 +189,7 @@ $ mv libcrypto.so libossl3-crypto.so
 $ readelf -a libossl3-crypto.so | grep SONAME
 ```
 
-# Cross-Compiling TPM2-TSS
+## Cross-Compiling TPM2-TSS
 
 Set the environment variables:
 ```all
@@ -134,7 +218,7 @@ $ make install -j
 $ ls -R build
 ```
 
-# Cross-Compiling TPM2-OpenSSL
+## Cross-Compiling TPM2-OpenSSL
 
 Set the environment variables:
 ```all
@@ -184,7 +268,7 @@ $ mv tpm2.so libtss2-ossl3-provider.so
 $ readelf -a libtss2-ossl3-provider.so | grep SONAME
 ```
 
-# Cross-Compiling TPM2 Simulator
+## Cross-Compiling TPM2 Simulator
 
 Set the environment variables:
 ```all
@@ -220,32 +304,87 @@ $ make install DESTDIR=/home/wenxinleong/ms-tpm-20-ref/TPMCmd/build -j
 $ ls -R build
 ```
 
-# Building AOSP
+---
 
+# Example Android Application for Accessing TPM
+
+In this section, we will launch the Android application in the Android emulator to access a simulated TPM.
+
+## Preparing the Example Application
+
+Complete the application template by filling in the missing components, including header files, libraries, and binaries.
+> To access a real TPM target, the library `libtss2-tcti-device.so` is required too. Additionally, locate the variable `tcti_name_conf` in `~/tpm2-aosp2/src/IFXApp/jni/lib.c` and modify it to use a different TPM target.
 ```all
-$ mkdir ~/aosp
-$ cd ~/aosp
-$ repo init --depth=1 -u https://android.googlesource.com/platform/manifest -b android-14.0.0_r11
-$ cp ~/aosp/.repo/repo/repo /usr/bin/repo
-$ repo sync -c -f --force-sync --no-clone-bundle --no-tags -j 0
-$ du -sm ~/aosp
+# Create a copy of the application
+$ cp -rf ~/tpm2-aosp2/src/IFXApp ~/
 
+# Openssl 3 header files and libraries
+$ cp -rf ~/openssl/build/usr/local/include/openssl ~/IFXApp/ossl3/include/
+$ cp ~/openssl/build/usr/local/lib/libossl3-crypto.so ~/IFXApp/ossl3/x86_64/
+
+# tpm2-tss header files and libraries
+$ cp -rf ~/tpm2-tss/build/usr/local/include/tss2 ~/IFXApp/tss2/include/
+$ cp ~/tpm2-tss/build/usr/local/lib/libtss2-esys.so ~/IFXApp/tss2/x86_64/
+$ cp ~/tpm2-tss/build/usr/local/lib/libtss2-sys.so ~/IFXApp/tss2/x86_64/
+$ cp ~/tpm2-tss/build/usr/local/lib/libtss2-mu.so ~/IFXApp/tss2/x86_64/
+$ cp ~/tpm2-tss/build/usr/local/lib/libtss2-rc.so ~/IFXApp/tss2/x86_64/
+$ cp ~/tpm2-tss/build/usr/local/lib/libtss2-tctildr.so ~/IFXApp/tss2/x86_64/
+$ cp ~/tpm2-tss/build/usr/local/lib/libtss2-tcti-mssim.so ~/IFXApp/tss2/x86_64/
+# $ cp ~/tpm2-tss/build/usr/local/lib/libtss2-tcti-device.so ~/IFXApp/tss2/<arch>/
+
+# tpm2-openssl provider
+$ cp ~/tpm2-openssl/build/usr/lib/x86_64-linux-gnu/ossl-modules/libtss2-ossl3-provider.so ~/IFXApp/tss2-ossl3/x86_64/
+
+# ms-tpm-20-ref TPM simulator binary
+$ cp ~/ms-tpm-20-ref/TPMCmd/Simulator/src/tpm2-simulator ~/IFXApp/mssim/x86_64/bin/
+```
+
+## Rebuilding AOSP with the Example Application
+
+Remember to complete the section [Preparing the Example Application](#preparing-the-example-application) before copying the application into the AOSP project:
+```all
+$ cp -rf ~/IFXApp ~/aosp/packages/apps/
+```
+
+Incorporate the application into the AOSP build:
+```all
+$ cat << EOF >> "$HOME/aosp/build/make/target/product/base_product.mk"
+$
+$ PRODUCT_PACKAGES += \\
+$     ifx_demo_app \\
+$     tpm2-simulator \\
+$     libtss2-ossl3-provider \\
+$
+$ PRODUCT_ARTIFACT_PATH_REQUIREMENT_ALLOWED_LIST += \\
+$     system/app/ifx_demo_app/ifx_demo_app.apk \\
+$     system/app/ifx_demo_app/lib/x86_64/libifx_jni.so \\
+$     system/bin/tpm2-simulator \\
+$     system/lib/libossl3-crypto.so \\
+$     system/lib/libtss2-esys.so \\
+$     system/lib/libtss2-mu.so \\
+$     system/lib/libtss2-ossl3-provider.so \\
+$     system/lib/libtss2-rc.so \\
+$     system/lib/libtss2-sys.so \\
+$     system/lib/libtss2-tctildr.so \\
+$     system/lib64/libifx_jni.so \\
+$     system/lib64/libossl3-crypto.so \\
+$     system/lib64/libtss2-esys.so \\
+$     system/lib64/libtss2-mu.so \\
+$     system/lib64/libtss2-ossl3-provider.so \\
+$     system/lib64/libtss2-rc.so \\
+$     system/lib64/libtss2-sys.so \\
+$     system/lib64/libtss2-tcti-mssim.so \\
+$     system/lib64/libtss2-tctildr.so \\
+$ EOF
+```
+
+Rebuild the AOSP:
+```all
 $ cd ~/aosp
-$ source build/envsetup.sh
-$ lunch sdk_phone_x86_64
 $ m -j
-$ du -sm ~/aosp/out
 ```
 
-# Running Android Emulator
-
-```exclude
-$ cd ~/aosp
-$ source build/envsetup.sh
-$ emulator -verbose -gpu swiftshader -selinux permissive -logcat *:v
-```
-
-# Running Headless Android Emulator
+## Running the Example Application
 
 Start the emulator in headless mode:
 ```all
@@ -257,22 +396,46 @@ $ emulator -selinux permissive -no-window -no-audio &
 $ EMULATOR_PID=$!
 ```
 
-Wait for the emulator to be ready:
+Wait until the emulator is ready for use:
 ```all
 $ export PATH=${HOME}/aosp/out/host/linux-x86/bin:$PATH
 
 # Usage: ./emulator_check.sh <emulator pid> <desired android version> <max wait time in seconds>
 $ chmod +x ~/tpm2-aosp2/scripts/emulator_check.sh
-$ ~/tpm2-aosp2/scripts/emulator_check.sh $EMULATOR_PID 14 30
+$ ~/tpm2-aosp2/scripts/emulator_check.sh $EMULATOR_PID 14 120
 ```
 
-Interact with the emulator:
+Launch the application and monitor its activities for any errors:
 ```all
-$ adb shell getprop ro.build.version.sdk
-$ adb shell getprop ro.system.build.version.release
+# Temporary Workaround for CI (GitHub Actions): As of now, efforts to implement a method for
+# precisely determining when the Android emulator is ready to launch applications have
+# been unsuccessful. As a makeshift solution, a delay has been introduced.
+$ sleep 30
+
+# Check if the application is installed
+$ adb shell pm list packages -a | grep com.ifx.nave
+
+# Clear the log
+$ adb shell logcat -c
+
+# Launch the application
+$ adb shell am start -n com.ifx.nave/com.ifx.nave.MainActivity
+
+# Usage: ./app_check.sh <max wait time in seconds>
+$ chmod +x ~/tpm2-aosp2/scripts/app_check.sh
+$ ~/tpm2-aosp2/scripts/app_check.sh 120
+```
+
+Terminate the application:
+```all
+$ adb shell am force-stop com.ifx.nave
 ```
 
 Terminate the emulator:
 ```all
 $ kill -SIGTERM $EMULATOR_PID
 ```
+
+# License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

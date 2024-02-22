@@ -10,16 +10,18 @@ TEMP_FILE=.parse_${SCRIPT_NAME}
 cd $WORKSPACE_DIR
 
 # Mark generic commands
-cat README.md | sed '/^ *```all.*$/,/^ *```$/ { s/^ *\$/_M_/; { :loop; /^_M_.*\\$/ { n; s/^/_M_/; t loop } } }' > ${TEMP_FILE}
-# Mark commands that are dependent on the distro
-sed -i '/^ *```.*'"${DOCKER_IMAGE}"'.*/,/^ *```$/ { s/^ *\$/_M_/; { :loop; /^_M_.*\\$/ { n; s/^/_M_/; t loop } } }' ${TEMP_FILE}
-# Comment all lines without the marker
+cat README.md | sed '/^ *```all.*$/,/^ *```$/ { s/^ *\$/_M_/; { :loop; /^_M_.*[^\\]\\$/ { n; s/^/_M_/; t loop } } }' > ${TEMP_FILE}
+# Mark commands that depend on the distro
+sed -i '/^ *```.*'"${DOCKER_IMAGE}"'.*/,/^ *```$/ { s/^ *\$/_M_/; { :loop; /^_M_.*[^\\]\\$/ { n; s/^/_M_/; t loop } } }' ${TEMP_FILE}
+# Append a space to all lines that contain only the marker
+sed -i '/^_M_$/ s/$/ /' ${TEMP_FILE}
+# Comment out all lines that do not contain the marker
 sed -i '/^_M_/! s/^/# /' ${TEMP_FILE}
 # Remove the appended comment from all marked lines
 sed -i '/^_M_/ s/<--.*//' ${TEMP_FILE}
 # Remove the marker
 sed -i 's/^_M_ //' ${TEMP_FILE}
-# Remove sudo, it is not necessary in docker
+# Remove sudo, it is not necessary within Docker
 sed -i 's/sudo //g' ${TEMP_FILE}
 
 # Initialize an executable script

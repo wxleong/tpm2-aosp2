@@ -165,8 +165,12 @@ Cross-compile the project:
 ```all
 $ cd ~/openssl
 
-# Why "-U__ANDROID_API__ -D__ANDROID_API__=34"? Read https://github.com/openssl/openssl/issues/18561
-$ ./Configure android-x86_64 -U__ANDROID_API__ -D__ANDROID_API__=34 --libdir="${HOME}/openssl/build/usr/local/lib" --prefix="${HOME}/openssl/build/usr/local" --openssldir="${HOME}/openssl/build/usr/local/lib/ssl"
+# Why "-U__ANDROID_API__ -D__ANDROID_API__=34"?
+# Read https://github.com/openssl/openssl/issues/18561
+$ ./Configure android-x86_64 -U__ANDROID_API__ -D__ANDROID_API__=34 \
+  --libdir="${HOME}/openssl/build/usr/local/lib" \
+  --prefix="${HOME}/openssl/build/usr/local" \
+  --openssldir="${HOME}/openssl/build/usr/local/lib/ssl"
 $ make -j
 
 $ mkdir build
@@ -194,9 +198,6 @@ $ readelf -a libossl3-crypto.so | grep SONAME
 Set the environment variables:
 ```all
 $ export PATH=${HOME}/android-ndk-r26b/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
-$ export CC=x86_64-linux-android34-clang
-$ export CRYPTO_LIBS="-L${HOME}/openssl/build/usr/local/lib -lossl3-crypto"
-$ export CRYPTO_CFLAGS="-I${HOME}/openssl/build/usr/local/include"
 ```
 
 Download the project:
@@ -211,7 +212,13 @@ Cross-compile the project:
 $ cd ~/tpm2-tss
 
 $ ./bootstrap
-$ ./configure --host=x86_64-linux-android34 --with-crypto=ossl --disable-fapi --disable-policy --disable-tcti-spi-helper --disable-tcti-i2c-helper --with-maxloglevel=none --libdir="${HOME}/tpm2-tss/build/usr/local/lib" --includedir="${HOME}/tpm2-tss/build/usr/local/include"
+$ ./configure --host=x86_64-linux-android34 --with-crypto=ossl \
+  --disable-fapi --disable-policy --disable-tcti-spi-helper --disable-tcti-i2c-helper \
+  --with-maxloglevel=none \
+  --libdir="${HOME}/tpm2-tss/build/usr/local/lib" \
+  --includedir="${HOME}/tpm2-tss/build/usr/local/include" \
+  CC=x86_64-linux-android34-clang \
+  PKG_CONFIG_PATH="${HOME}/openssl/build/usr/local/lib/pkgconfig"
 $ make -j
 
 $ make install -j
@@ -223,17 +230,6 @@ $ ls -R build
 Set the environment variables:
 ```all
 $ export PATH=${HOME}/android-ndk-r26b/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
-$ export CC=x86_64-linux-android34-clang
-$ export TSS2_LIBS="-L${HOME}/tpm2-tss/build/usr/local/lib"
-$ export TSS2_CFLAGS="-I${HOME}/tpm2-tss/build/usr/local/include"
-$ export TSS2_ESYS_LIBS="{$TSS2_LIBS} -ltss2-esys"
-$ export TSS2_ESYS_CFLAGS=$TSS2_CFLAGS
-$ export TSS2_TCTILDR_LIBS="${TSS2_LIBS} -ltss2-tctildr"
-$ export TSS2_TCTILDR_CFLAGS=$TSS2_CFLAGS
-$ export TSS2_RC_LIBS="${TSS2_LIBS} -ltss2-rc"
-$ export TSS2_RC_CFLAGS=$TSS2_CFLAGS
-$ export CRYPTO_LIBS="-L${HOME}/openssl/build/usr/local/lib -lossl3-crypto"
-$ export CRYPTO_CFLAGS="-I${HOME}/openssl/build/usr/local/include"
 ```
 
 Download the project:
@@ -246,16 +242,18 @@ Cross-compile the project:
 $ cd ~/tpm2-openssl
 
 $ ./bootstrap
-$ ./configure --host=x86_64-linux-android34
+$ ./configure --host=x86_64-linux-android34 \
+  CC=x86_64-linux-android34-clang \
+  PKG_CONFIG_PATH="${HOME}/openssl/build/usr/local/lib/pkgconfig:${HOME}/tpm2-tss/build/usr/local/lib/pkgconfig"
 $ make -j
 
-$ make install DESTDIR=${HOME}/tpm2-openssl/build -j
-$ ls -R build
+$ make install -j
+$ ls -R ~/openssl/build
 ```
 
 Change the library name to ensure clarity:
 ```all
-$ cd ~/tpm2-openssl/build/usr/lib/x86_64-linux-gnu/ossl-modules
+$ cd ~/openssl/build/usr/local/lib/ossl-modules
 
 # Read the SONAME entry before modifying
 $ readelf -a tpm2.so | grep SONAME
@@ -273,10 +271,6 @@ $ readelf -a libtss2-ossl3-provider.so | grep SONAME
 Set the environment variables:
 ```all
 $ export PATH=${HOME}/android-ndk-r26b/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
-$ export CC=x86_64-linux-android34-clang
-$ export CPP="$CC -E"
-$ export LIBCRYPTO_LIBS="-L${HOME}/openssl/build/usr/local/lib -lossl3-crypto"
-$ export LIBCRYPTO_CFLAGS="-I${HOME}/openssl/build/usr/local/include"
 ```
 
 Download the project:
@@ -296,11 +290,14 @@ Cross-compile the project:
 $ cd ~/ms-tpm-20-ref/TPMCmd
 
 $ ./bootstrap
-$ ./configure --host=x86_64-linux-android34
+$ ./configure --host=x86_64-linux-android34 \
+  CC=x86_64-linux-android34-clang \
+  CPP="x86_64-linux-android34-clang -E" \
+  PKG_CONFIG_PATH="${HOME}/openssl/build/usr/local/lib/pkgconfig"
 $ make -j
 
 $ mkdir build
-$ make install DESTDIR=/home/wenxinleong/ms-tpm-20-ref/TPMCmd/build -j
+$ make install DESTDIR=${HOME}/ms-tpm-20-ref/TPMCmd/build -j
 $ ls -R build
 ```
 
@@ -333,10 +330,10 @@ $ cp ~/tpm2-tss/build/usr/local/lib/libtss2-tcti-mssim.so ~/IFXApp/tss2/x86_64/
 # $ cp ~/tpm2-tss/build/usr/local/lib/libtss2-tcti-device.so ~/IFXApp/tss2/<arch>/
 
 # tpm2-openssl provider
-$ cp ~/tpm2-openssl/build/usr/lib/x86_64-linux-gnu/ossl-modules/libtss2-ossl3-provider.so ~/IFXApp/tss2-ossl3/x86_64/
+$ cp ~/openssl/build/usr/local/lib/ossl-modules/libtss2-ossl3-provider.so ~/IFXApp/tss2-ossl3/x86_64/
 
 # ms-tpm-20-ref TPM simulator binary
-$ cp ~/ms-tpm-20-ref/TPMCmd/Simulator/src/tpm2-simulator ~/IFXApp/mssim/x86_64/bin/
+$ cp ~/ms-tpm-20-ref/TPMCmd/build/usr/local/bin/tpm2-simulator ~/IFXApp/mssim/x86_64/bin/
 ```
 
 ## Rebuilding AOSP with the Example Application

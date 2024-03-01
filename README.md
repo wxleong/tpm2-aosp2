@@ -21,7 +21,7 @@ Please note that this guide is focused exclusively on TPM integration and does n
     - **[Cross-Compiling TPM2-TSS](#cross-compiling-tpm2-tss)**
     - **[Cross-Compiling TPM2-OpenSSL](#cross-compiling-tpm2-openssl)**
     - **[Cross-Compiling TPM2 Simulator](#cross-compiling-tpm2-simulator)**
-- **[Example Android Application for Accessing TPM](example-android-application-for-accessing-tpm)**
+- **[Example Android Application for Accessing TPM](#example-android-application-for-accessing-tpm)**
     - **[Preparing the Example Application](#preparing-the-example-application)**
     - **[Rebuilding AOSP with the Example Application](#rebuilding-aosp-with-the-example-application)**
     - **[Running the Example Application](#running-the-example-application)**

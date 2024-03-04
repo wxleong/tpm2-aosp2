@@ -4,6 +4,8 @@
 
 Guide to Integrating OPTIGA™ TPM 2.0 with the Android Open Source Project (AOSP).
 
+This project will guide you through the necessary steps to cross-compile essential TPM2-related libraries and incorporate them into the AOSP build. Additionally, the guide includes instructions for launching the AOSP emulator with the TPM2 simulator, enabling testing of the example Android application.
+
 Please note that this guide is focused exclusively on TPM integration and does not cover AOSP security configurations. Be aware that the emulator is set to operate in permissive mode ("-selinux permissive") as described in this guide. Ensure you implement the necessary security measures according to your application's needs.
 
 ---

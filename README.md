@@ -1,5 +1,9 @@
 [![Github actions](https://github.com/wxleong/tpm2-aosp2/actions/workflows/main.yml/badge.svg)](https://github.com/wxleong/tpm2-aosp2/actions)
 
+# DEPRECATED
+
+This repository is deprecated and will no longer be maintained. It has been replaced by https://github.com/infineon/optiga-tpm-aosp.
+
 # Introduction
 
 Guide to Integrating OPTIGA™ TPM 2.0 with the Android Open Source Project (AOSP).
